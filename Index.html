@@ -1,0 +1,116 @@
+html
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LICHT Talkback App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; }
+        h1 { color: #333; margin-bottom: 5px; }
+        .status { color: #f39c12; font-weight: bold; margin: 15px 0; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; color: white; margin: 10px 0; }
+        .btn-leader { background: #e67e22; }
+        .btn-member { background: #7f8c8d; }
+        .btn-talk { background: #2ecc71; height: 150px; border-radius: 50%; width: 150px; margin: 20px auto; display: none; box-shadow: 0 6px 12px rgba(46,204,113,0.4); }
+        .btn-talk:active { background: #27ae60; transform: scale(0.95); }
+        .hidden { display: none; }
+        .info-box { background: #e8f4fd; padding: 10px; border-radius: 8px; font-size: 14px; text-align: left; margin-top: 15px; color: #1d1d1d; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>LICHT Talkback</h1>
+        <div style="font-size: 12px; color: #7f8c8d; letter-spacing: 1px;">LOCAL WI-FI • NO INTERNET REQUIRED</div>
+        
+        <!-- MAIN MENU -->
+        <div id="menu-screen">
+            <p style="color: #666;">Piliin ang iyong role para sa talkback session na ito:</p>
+            <button class="btn-leader" onclick="selectRole('leader')">🚀 Transmitter (Leader)</button>
+            <button class="btn-member" onclick="selectRole('member')">🎧 Receiver (Member)</button>
+        </div>
+
+        <!-- TRANSMITTER SCREEN -->
+        <div id="transmitter-screen" class="hidden">
+            <div class="status" id="trans-status">Status: Transmitter Active</div>
+            <button class="btn-talk" id="talk-btn">PINDUTIN PARA MAGSALITA</button>
+            <p style="font-size: 14px; color: #666;">Pindutin at hawakan (Hold) habang nagsasalita. Bitawan pagkatapos.</p>
+        </div>
+
+        <!-- RECEIVER SCREEN -->
+        <div id="receiver-screen" class="hidden">
+            <div class="status" id="recv-status" style="color: #2ecc71;">Status: Receiver Ready</div>
+            <div style="background: #e74c3c; color: white; padding: 20px; border-radius: 10px; font-weight: bold; margin: 20px 0;">
+                NAKIKINIG SA LEADER...
+            </div>
+            <audio id="localAudio" autoplay controls style="width: 100%; margin-top: 10px; display:none;"></audio>
+        </div>
+
+        <div class="info-box">
+            <strong>Paano gamitin:</strong><br>
+            1. Ikonekta ang lahat ng phone sa iisang Wi-Fi Hotspot.<br>
+            2. I-type ang IP address ng host phone sa Chrome ng ibang phone.<br>
+            3. Siguraduhing i-allow ang Microphone access kapag nag-prompt.
+        </div>
+    </div>
+
+    <script>
+        let localStream;
+        const talkBtn = document.getElementById('talk-btn');
+
+        function selectRole(role) {
+            document.getElementById('menu-screen').classList.add('hidden');
+            if (role === 'leader') {
+                document.getElementById('transmitter-screen').classList.remove('hidden');
+                setupTransmitter();
+            } else {
+                document.getElementById('receiver-screen').classList.remove('hidden');
+                setupReceiver();
+            }
+        }
+
+        async function setupTransmitter() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                talkBtn.style.display = 'block';
+                
+                // Mute audio stream sa simula hangga't hindi pinipindot ang button
+                localStream.getAudioTracks()[0].enabled = false;
+
+                // Touch/Press logic para sa mobile
+                talkBtn.addEventListener('touchstart', startTalking);
+                talkBtn.addEventListener('touchend', stopTalking);
+                // Mouse fallback para sa testing
+                talkBtn.addEventListener('mousedown', startTalking);
+                talkBtn.addEventListener('mouseup', stopTalking);
+
+            } catch (err) {
+                alert("Kailangan ng Microphone permission para makapagsalita: " + err.message);
+            }
+        }
+
+        function startTalking() {
+            if (localStream) {
+                localStream.getAudioTracks()[0].enabled = true;
+                document.getElementById('trans-status').innerText = "🎤 NAGSASALITA KA NA...";
+                document.getElementById('trans-status').style.color = "#2ecc71";
+            }
+        }
+
+        function stopTalking() {
+            if (localStream) {
+                localStream.getAudioTracks()[0].enabled = false;
+                document.getElementById('trans-status').innerText = "Status: Transmitter Active";
+                document.getElementById('trans-status').style.color = "#f39c12";
+            }
+        }
+
+        function setupReceiver() {
+            // Dito papasok ang audio playback para sa network peers
+            console.log("Receiver activated. Waiting for local audio stream sync.");
+        }
+    </script>
+</body>
+</html>
